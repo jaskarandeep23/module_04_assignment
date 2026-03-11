@@ -1,2 +1,5 @@
 node_modules/
 dist/
+src/firebase-service-account.json
+logs/
+*.log
