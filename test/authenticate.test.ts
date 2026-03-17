@@ -1,6 +1,13 @@
 import { Request, Response } from "express";
 import authenticate from "../src/api/v1/middleware/authenticate";
 import { AuthenticationError } from "../src/api/v1/errors/error";
+import { auth } from "../src/config/firebaseConfig";
+
+jest.mock("../src/config/firebaseConfig", () => ({
+    auth: {
+        verifyIdToken: jest.fn()
+    }
+}));
 
 describe("authenticate middleware", () => {
     let req: Partial<Request>;
@@ -17,6 +24,8 @@ describe("authenticate middleware", () => {
         };
 
         next = jest.fn();
+
+        jest.clearAllMocks();
     });
 
     it("should pass AuthenticationError when no token is provided", async () => {
@@ -52,6 +61,10 @@ describe("authenticate middleware", () => {
             authorization: "Bearer wrong-token"
         };
 
+        (auth.verifyIdToken as jest.Mock).mockRejectedValueOnce(
+            new Error("invalid token")
+        );
+
         await authenticate(req as Request, res as Response, next);
 
         expect(next).toHaveBeenCalledWith(
@@ -65,14 +78,21 @@ describe("authenticate middleware", () => {
 
     it("should set res.locals for manager token", async () => {
         req.headers = {
-            authorization: "Bearer manager-token-def456"
+            authorization: "Bearer manager-token"
         };
+
+        (auth.verifyIdToken as jest.Mock).mockResolvedValueOnce({
+            uid: "manager-uid-002",
+            email: "manager@pixell-river.com",
+            role: "manager"
+        });
 
         await authenticate(req as Request, res as Response, next);
 
         expect(res.locals).toEqual({
-            role: "manager",
-            email: "manager@pixell-river.com"
+            uid: "manager-uid-002",
+            email: "manager@pixell-river.com",
+            role: "manager"
         });
 
         expect(next).toHaveBeenCalledWith();
@@ -80,14 +100,21 @@ describe("authenticate middleware", () => {
 
     it("should set res.locals for admin token", async () => {
         req.headers = {
-            authorization: "Bearer admin-token-ghi789"
+            authorization: "Bearer admin-token"
         };
+
+        (auth.verifyIdToken as jest.Mock).mockResolvedValueOnce({
+            uid: "admin-uid-003",
+            email: "admin@pixell-river.com",
+            role: "admin"
+        });
 
         await authenticate(req as Request, res as Response, next);
 
         expect(res.locals).toEqual({
-            role: "admin",
-            email: "admin@pixell-river.com"
+            uid: "admin-uid-003",
+            email: "admin@pixell-river.com",
+            role: "admin"
         });
 
         expect(next).toHaveBeenCalledWith();
