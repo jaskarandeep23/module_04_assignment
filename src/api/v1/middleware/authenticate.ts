@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from "express";
 import { DecodedIdToken } from "firebase-admin/auth";
 import { AuthenticationError } from "../errors/error";
 import { auth } from "../../../config/firebaseConfig";
-import { getErrorMessage, getErrorCode } from "../utils/errorUtils";
 
 const authenticate = async (
     req: Request,
@@ -35,8 +34,8 @@ const authenticate = async (
     } catch (error: unknown) {
         next(
             new AuthenticationError(
-                `Unauthorized : ${getErrorMessage(error)}`,
-                getErrorCode(error)
+                "Unauthorized : invalid token",
+                "TOKEN_INVALID"
             )
         );
     }
